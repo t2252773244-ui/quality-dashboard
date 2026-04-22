@@ -140,53 +140,6 @@ export const myWorkData = {
   ],
 };
 
-// 详细检测数据（100条）
-export const detailedInspectionData = (() => {
-  const data = [];
-  const productModels = ['iPhone 15 Pro', 'iPhone 15', 'iPhone 14 Pro', 'iPhone 14', 'iPhone 13'];
-  const lines = ['A', 'B', 'C'];
-  const stations = ['外观检测', '功能检测', '包装检测'];
-  const defectTypes = ['划痕', '变形', '污渍', '色差', '装配不良'];
-  const defectLevels = ['高', '中', '低'];
-  const statuses = ['未处理', '处理中', '已处理'];
-  const results = ['OK', 'NG'];
-  const operators = ['张三', '李四', '王五', '赵六', '钱七'];
-  const reviewers = ['孙八', '周九', '吴十', '郑一', '王二'];
-  
-  // 生成最近7天的日期
-  const getRandomDate = () => {
-    const today = new Date();
-    const daysAgo = Math.floor(Math.random() * 7);
-    const date = new Date(today);
-    date.setDate(date.getDate() - daysAgo);
-    return date.toISOString().split('T')[0];
-  };
-  
-  for (let i = 1; i <= 100; i++) {
-    const result = results[Math.floor(Math.random() * results.length)];
-    const hasDefect = result === 'NG';
-    
-    data.push({
-      id: i,
-      sn: `SN${20240500000 + i}`,
-      batch: `B${202405000 + Math.floor((i - 1) / 20) + 1}`,
-      productModel: productModels[Math.floor(Math.random() * productModels.length)],
-      line: lines[Math.floor(Math.random() * lines.length)],
-      station: stations[Math.floor(Math.random() * stations.length)],
-      defectType: hasDefect ? defectTypes[Math.floor(Math.random() * defectTypes.length)] : null,
-      defectLevel: hasDefect ? defectLevels[Math.floor(Math.random() * defectLevels.length)] : null,
-      status: hasDefect ? statuses[Math.floor(Math.random() * statuses.length)] : '已处理',
-      result,
-      date: getRandomDate(),
-      operator: operators[Math.floor(Math.random() * operators.length)],
-      reviewer: hasDefect ? reviewers[Math.floor(Math.random() * reviewers.length)] : null,
-      workOrder: `WO${202405000 + Math.floor((i - 1) / 10) + 1}`,
-    });
-  }
-  
-  return data;
-})();
-
 // 导航菜单数据
 export const navigationData = [
   { id: 1, name: '首页 / 工作台', icon: '🏠', active: true },
