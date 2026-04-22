@@ -61,6 +61,57 @@ body {
   .module-card .right-section {
     width: 100%;
   }
+  
+  /* 调整卡片布局为单列 */
+  .grid-cols-2 {
+    grid-template-columns: 1fr;
+  }
+  
+  /* 调整搜索筛选栏布局 */
+  .grid-cols-3 {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  body {
+    min-width: 320px;
+  }
+  
+  .main-content {
+    padding: 1rem;
+  }
+  
+  /* 调整搜索筛选栏为单列 */
+  .grid-cols-2,
+  .grid-cols-3 {
+    grid-template-columns: 1fr;
+  }
+  
+  /* 调整表格字体大小 */
+  .table {
+    font-size: 0.75rem;
+  }
+  
+  .table th,
+  .table td {
+    padding: 0.5rem;
+  }
+  
+  /* 调整按钮大小 */
+  .btn {
+    padding: 0.5rem 1rem;
+    font-size: 0.75rem;
+  }
+  
+  /* 调整标题大小 */
+  h2 {
+    font-size: 1.5rem;
+  }
+  
+  h4 {
+    font-size: 0.875rem;
+  }
 }
 
 /* 自定义滚动条 */
