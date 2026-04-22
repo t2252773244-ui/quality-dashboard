@@ -1,0 +1,1287 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>手机整机外观智能检测与决策建议系统</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/recharts@2.12.7/umd/Recharts.min.js"></script>
+    <style>
+      :root {
+        font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        line-height: 1.5;
+        font-weight: 400;
+        color-scheme: light;
+        color: #1e293b;
+        background-color: #f8fafc;
+        font-synthesis: none;
+        text-rendering: optimizeLegibility;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+      }
+      body {
+        margin: 0;
+        min-width: 1024px;
+        min-height: 100vh;
+      }
+      /* 自定义滚动条 */
+      ::-webkit-scrollbar {
+        width: 8px;
+        height: 8px;
+      }
+      ::-webkit-scrollbar-track {
+        background: #f1f5f9;
+      }
+      ::-webkit-scrollbar-thumb {
+        background: #cbd5e1;
+        border-radius: 4px;
+      }
+      ::-webkit-scrollbar-thumb:hover {
+        background: #94a3b8;
+      }
+      /* 自定义按钮样式 */
+      .btn {
+        padding: 0.5rem 1rem;
+        border-radius: 0.375rem;
+        font-weight: 500;
+        transition: all 0.2s;
+        cursor: pointer;
+      }
+      .btn-outline {
+        border: 1px solid #d1d5db;
+        background: white;
+      }
+      .btn-outline:hover {
+        background: #f3f4f6;
+      }
+      /* 自定义卡片样式 */
+      .card {
+        background: white;
+        border-radius: 0.5rem;
+        border: 1px solid #e5e7eb;
+        box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+        padding: 1.5rem;
+        transition: box-shadow 0.3s;
+      }
+      .card:hover {
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+      }
+      /* 自定义表格样式 */
+      .table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+      .table th {
+        padding: 0.75rem 1rem;
+        text-align: left;
+        font-size: 0.875rem;
+        font-weight: 500;
+        color: #4b5563;
+        background: #f9fafb;
+        border-bottom: 1px solid #e5e7eb;
+      }
+      .table td {
+        padding: 0.75rem 1rem;
+        font-size: 0.875rem;
+        border-bottom: 1px solid #e5e7eb;
+      }
+      .table tr:hover {
+        background: #f9fafb;
+      }
+      /* 响应式布局 */
+      @media (max-width: 1440px) {
+        .main-content {
+          margin-right: 0;
+        }
+        .right-panel {
+          display: none;
+        }
+      }
+      @media (max-width: 1280px) {
+        .sidebar {
+          width: 56px;
+        }
+        .sidebar .menu-text {
+          display: none;
+        }
+        .main-content {
+          margin-left: 56px;
+        }
+      }
+      @media (max-width: 1024px) {
+        body {
+          min-width: 768px;
+        }
+        .module-card {
+          flex-direction: column;
+        }
+        .module-card .left-section,
+        .module-card .right-section {
+          width: 100%;
+        }
+      }
+    </style>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              primary: '#1e40af',
+              secondary: '#3b82f6',
+              success: '#10b981',
+              warning: '#f59e0b',
+              danger: '#ef4444',
+              info: '#3b82f6',
+              dark: '#1e293b',
+              light: '#f1f5f9',
+            },
+            fontFamily: {
+              inter: ['Inter', 'system-ui', 'sans-serif'],
+            },
+          },
+        },
+      };
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="text/babel">
+      const { useState } = React;
+      const { LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } = Recharts;
+
+      // 模拟数据
+      const dashboardData = {
+        kpi: [
+          { name: '检测总量', value: '12,548', change: '+12.5%', trend: 'up' },
+          { name: '通过率', value: '98.2%', change: '+0.8%', trend: 'up' },
+          { name: '异常率', value: '1.8%', change: '-0.3%', trend: 'down' },
+          { name: '待处理数', value: '245', change: '+12', trend: 'up' },
+        ],
+        trend: [
+          { date: '1月', value: 8540 },
+          { date: '2月', value: 9230 },
+          { date: '3月', value: 10560 },
+          { date: '4月', value: 11870 },
+          { date: '5月', value: 12548 },
+        ],
+        defectDistribution: [
+          { name: '划痕', value: 45 },
+          { name: '变形', value: 25 },
+          { name: '污渍', value: 15 },
+          { name: '其他', value: 15 },
+        ],
+        lineStatus: [
+          { name: '线体A', status: '运行中', efficiency: '98%' },
+          { name: '线体B', status: '运行中', efficiency: '96%' },
+          { name: '线体C', status: '待机', efficiency: '0%' },
+        ],
+        todoList: [
+          { id: 1, title: '边界件待复判', count: 12, priority: '高' },
+          { id: 2, title: '批量风险待审批', count: 5, priority: '中' },
+          { id: 3, title: '规则更新待确认', count: 3, priority: '低' },
+        ],
+      };
+
+      const inspectionData = {
+        recentInspections: [
+          { id: 1, serial: 'SN20240501001', model: 'iPhone 15 Pro', status: '通过', time: '2024-05-01 14:30' },
+          { id: 2, serial: 'SN20240501002', model: 'iPhone 15 Pro', status: 'NG', time: '2024-05-01 14:28' },
+          { id: 3, serial: 'SN20240501003', model: 'iPhone 15', status: '通过', time: '2024-05-01 14:25' },
+          { id: 4, serial: 'SN20240501004', model: 'iPhone 15', status: '边界', time: '2024-05-01 14:22' },
+        ],
+        defectTypes: [
+          { id: 1, name: '划痕', severity: '轻度', count: 128 },
+          { id: 2, name: '变形', severity: '中度', count: 45 },
+          { id: 3, name: '污渍', severity: '轻度', count: 89 },
+          { id: 4, name: '色差', severity: '轻度', count: 67 },
+        ],
+      };
+
+      const reviewData = {
+        tasks: [
+          { id: 1, serial: 'SN20240501002', model: 'iPhone 15 Pro', defect: '划痕', priority: '高' },
+          { id: 2, serial: 'SN20240501004', model: 'iPhone 15', defect: '变形', priority: '中' },
+          { id: 3, serial: 'SN20240501005', model: 'iPhone 15 Pro', defect: '污渍', priority: '低' },
+        ],
+        decisionOptions: ['放行', 'NG', '返修', '隔离', '批量评估'],
+      };
+
+      const qualityData = {
+        yieldTrend: [
+          { date: '1月', value: 96.5 },
+          { date: '2月', value: 97.2 },
+          { date: '3月', value: 97.8 },
+          { date: '4月', value: 98.0 },
+          { date: '5月', value: 98.2 },
+        ],
+        defectTrend: [
+          { date: '1月', value: 350 },
+          { date: '2月', value: 320 },
+          { date: '3月', value: 280 },
+          { date: '4月', value: 250 },
+          { date: '5月', value: 220 },
+        ],
+        riskAlerts: [
+          { id: 1, type: '批量风险', level: '高', description: '线体A连续出现5个同类型缺陷' },
+          { id: 2, type: '异常趋势', level: '中', description: '线体B良率下降2%' },
+          { id: 3, type: '规则警告', level: '低', description: '新规则与历史数据匹配度低' },
+        ],
+      };
+
+      const ruleData = {
+        standards: [
+          { id: 1, name: '苹果标准包 v1.0', client: 'Apple', version: '1.0', status: '生效中' },
+          { id: 2, name: '三星标准包 v2.1', client: 'Samsung', version: '2.1', status: '生效中' },
+          { id: 3, name: '小米标准包 v3.0', client: 'Xiaomi', version: '3.0', status: '测试中' },
+        ],
+        rules: [
+          { id: 1, name: '划痕检测规则', severity: '中度', status: '启用' },
+          { id: 2, name: '变形检测规则', severity: '高度', status: '启用' },
+          { id: 3, name: '污渍检测规则', severity: '轻度', status: '启用' },
+          { id: 4, name: '色差检测规则', severity: '轻度', status: '禁用' },
+        ],
+      };
+
+      const systemData = {
+        users: [
+          { id: 1, name: '管理员', role: '系统管理员', status: '活跃' },
+          { id: 2, name: '质检员A', role: '质检员', status: '活跃' },
+          { id: 3, name: '工程师B', role: '工程师', status: '活跃' },
+          { id: 4, name: '审核员C', role: '审核员', status: '离线' },
+        ],
+        roles: [
+          { id: 1, name: '系统管理员', permissions: 255 },
+          { id: 2, name: '质检员', permissions: 128 },
+          { id: 3, name: '工程师', permissions: 192 },
+          { id: 4, name: '审核员', permissions: 64 },
+        ],
+      };
+
+      const reportData = {
+        reportTypes: [
+          { id: 1, name: '每日检测报告', format: 'Excel' },
+          { id: 2, name: '周度质量报告', format: 'PDF' },
+          { id: 3, name: '月度缺陷分析', format: 'CSV' },
+        ],
+        dashboards: [
+          { id: 1, name: '生产概览', widgets: 5 },
+          { id: 2, name: '质量分析', widgets: 4 },
+          { id: 3, name: '效率监控', widgets: 3 },
+        ],
+      };
+
+      const myWorkData = {
+        todos: [
+          { id: 1, title: '复判SN20240501002', deadline: '2024-05-01 18:00', status: '待处理' },
+          { id: 2, title: '审批批量风险', deadline: '2024-05-02 10:00', status: '待处理' },
+          { id: 3, title: '更新检测规则', deadline: '2024-05-03 12:00', status: '进行中' },
+        ],
+        reviews: [
+          { id: 1, serial: 'SN20240501002', result: 'NG', time: '2024-05-01 15:30' },
+          { id: 2, serial: 'SN20240501001', result: '通过', time: '2024-05-01 14:45' },
+        ],
+      };
+
+      const navigationData = [
+        { id: 1, name: '首页 / 工作台', icon: '🏠', active: true },
+        { id: 2, name: '检测管理', icon: '🔍' },
+        { id: 3, name: '复判与处置', icon: '⚖️' },
+        { id: 4, name: '质量监控', icon: '📊' },
+        { id: 5, name: '规则与标准', icon: '📏' },
+        { id: 6, name: '系统管理', icon: '⚙️' },
+        { id: 7, name: '数据与报表', icon: '📈' },
+        { id: 8, name: '我的工作', icon: '👤' },
+      ];
+
+      const designPrinciples = [
+        { id: 1, name: '清晰直观', description: '界面布局清晰，操作流程直观，减少用户认知负担' },
+        { id: 2, name: '高效操作', description: '优化操作路径，减少不必要的步骤，提高工作效率' },
+        { id: 3, name: '状态可视', description: '关键状态实时可见，让用户随时了解系统运行情况' },
+        { id: 4, name: '追溯可查', description: '所有操作和决策可追溯，便于问题分析和责任认定' },
+        { id: 5, name: '响应式布局', description: '适配不同屏幕尺寸，确保在各种设备上都能正常使用' },
+      ];
+
+      const globalElements = [
+        { id: 1, name: '顶部导航栏', description: '显示系统名称、用户信息和全局操作' },
+        { id: 2, name: '左侧导航菜单', description: '提供系统主要功能模块的快速访问' },
+        { id: 3, name: '面包屑导航', description: '显示当前页面路径，便于用户定位' },
+        { id: 4, name: '操作按钮区', description: '集中展示页面主要操作按钮' },
+        { id: 5, name: '数据展示区', description: '以表格、图表等形式展示数据' },
+        { id: 6, name: '详情侧边栏', description: '展示选中项目的详细信息' },
+      ];
+
+      const colorStatus = [
+        { id: 1, status: '正常 / 通过', color: 'bg-success text-white', hex: '#10b981' },
+        { id: 2, status: '警告 / 关注', color: 'bg-warning text-white', hex: '#f59e0b' },
+        { id: 3, status: '异常 / 失败', color: 'bg-danger text-white', hex: '#ef4444' },
+        { id: 4, status: '待处理', color: 'bg-info text-white', hex: '#3b82f6' },
+        { id: 5, status: '已完成', color: 'bg-dark text-white', hex: '#1e293b' },
+        { id: 6, status: '已禁用', color: 'bg-gray-300 text-gray-600', hex: '#cbd5e1' },
+      ];
+
+      // 组件定义
+      const Sidebar = ({ onMenuClick, activeMenuId }) => {
+        return (
+          <div className="w-64 bg-primary text-white h-screen fixed left-0 top-0 flex flex-col">
+            {/* 系统名称 */}
+            <div className="p-6 border-b border-blue-800">
+              <div className="flex items-center mb-4">
+                {/* 图标区域 */}
+                <div className="w-12 h-12 bg-white/10 rounded-lg flex items-center justify-center mr-3">
+                  <span className="text-xl">🔍</span>
+                </div>
+                <div>
+                  <div className="text-xs text-blue-200">智能检测系统</div>
+                  <div className="font-bold">手机外观检测</div>
+                </div>
+              </div>
+              <h2 className="text-sm font-medium">检测 -> 判定 -> 决策</h2>
+            </div>
+
+            {/* 导航菜单 */}
+            <nav className="flex-1 p-4">
+              <ul>
+                {navigationData.map((item) => (
+                  <li key={item.id}>
+                    <button
+                      onClick={() => onMenuClick(item.id)}
+                      className={`w-full flex items-center px-4 py-3 rounded-lg text-left transition-all duration-200 ${item.id === activeMenuId ? 'bg-blue-700' : 'hover:bg-blue-800'}`}
+                    >
+                      <span className="mr-3">{item.icon}</span>
+                      <span className="menu-text">{item.name}</span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </nav>
+
+            {/* 底部用户信息 */}
+            <div className="p-4 border-t border-blue-800">
+              <div className="flex items-center">
+                <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center mr-3">
+                  <span>👤</span>
+                </div>
+                <div>
+                  <div className="text-sm font-medium">管理员</div>
+                  <div className="text-xs text-blue-200">系统管理员</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+      };
+
+      const RightGuidePanel = () => {
+        return (
+          <div className="w-80 bg-white border-l border-gray-200 h-screen fixed right-0 top-0 overflow-y-auto p-6">
+            {/* 页面标题 */}
+            <h2 className="text-lg font-bold mb-6">设计规范</h2>
+
+            {/* 界面设计原则 */}
+            <div className="mb-8">
+              <h3 className="text-md font-semibold mb-4">界面设计原则</h3>
+              <div className="space-y-3">
+                {designPrinciples.map((principle) => (
+                  <div key={principle.id} className="p-3 bg-gray-50 rounded-lg">
+                    <h4 className="font-medium text-primary">{principle.name}</h4>
+                    <p className="text-sm text-gray-600 mt-1">{principle.description}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* 全局设计元素 */}
+            <div className="mb-8">
+              <h3 className="text-md font-semibold mb-4">全局设计元素</h3>
+              <div className="space-y-3">
+                {globalElements.map((element) => (
+                  <div key={element.id} className="p-3 bg-gray-50 rounded-lg">
+                    <h4 className="font-medium text-primary">{element.name}</h4>
+                    <p className="text-sm text-gray-600 mt-1">{element.description}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* 状态颜色规范 */}
+            <div>
+              <h3 className="text-md font-semibold mb-4">状态颜色规范</h3>
+              <div className="space-y-3">
+                {colorStatus.map((status) => (
+                  <div key={status.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                    <span className="text-sm font-medium">{status.status}</span>
+                    <div className="flex items-center">
+                      <div className={`w-4 h-4 rounded mr-2`} style={{ backgroundColor: status.hex }}></div>
+                      <span className="text-xs text-gray-600">{status.hex}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        );
+      };
+
+      const ModuleCard = ({ id, title, description, features, children, color }) => {
+        const colorMap = {
+          'bg-primary': '#1e40af',
+          'bg-success': '#10b981',
+          'bg-warning': '#f59e0b',
+          'bg-info': '#3b82f6',
+          'bg-dark': '#1e293b',
+          'bg-secondary': '#3b82f6',
+        };
+
+        return (
+          <div className="card mb-8" style={{ borderLeft: `4px solid ${colorMap[color] || color}` }}>
+            <div className="flex flex-col md:flex-row gap-6">
+              {/* 左侧信息区 */}
+              <div className="w-full md:w-1/3 module-card left-section">
+                <div className="flex items-center mb-4">
+                  <div 
+                    className="w-8 h-8 rounded-full flex items-center justify-center text-white font-bold mr-3"
+                    style={{ backgroundColor: colorMap[color] || color }}
+                  >
+                    {id}
+                  </div>
+                  <h3 className="text-lg font-bold">{title}</h3>
+                </div>
+                <p className="text-gray-600 mb-4 text-sm">{description}</p>
+                <div className="mb-4">
+                  <h4 className="text-sm font-semibold mb-2">二级功能</h4>
+                  <ul className="space-y-1">
+                    {features.map((feature, index) => (
+                      <li key={index} className="text-sm flex items-start">
+                        <span className="mr-2 mt-1">•</span>
+                        <span>{feature}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+
+              {/* 右侧预览区 */}
+              <div className="w-full md:w-2/3 module-card right-section">
+                <div className="bg-gray-50 rounded-lg p-4 h-full border border-gray-100">
+                  {children}
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+      };
+
+      // 主应用组件
+      function App() {
+        const [activeMenuId, setActiveMenuId] = useState(1);
+
+        const handleMenuClick = (id) => {
+          setActiveMenuId(id);
+        };
+
+        // 颜色配置
+        const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8'];
+
+        return (
+          <div className="min-h-screen bg-gray-50">
+            {/* 顶部标题区域 */}
+            <div className="bg-white border-b border-gray-200 py-6 px-8">
+              <div className="max-w-7xl mx-auto">
+                <h1 className="text-2xl font-bold text-center">手机整机外观智能检测与决策建议系统 - 功能界面总览</h1>
+                <p className="text-gray-600 text-center mt-2">展示系统核心功能结构、关键页面布局与设计规范</p>
+                <p className="text-gray-500 text-center text-sm mt-1">用于产品评审、客户演示、研发拆解和设计对齐</p>
+              </div>
+            </div>
+
+            {/* 主要内容区域 */}
+            <div className="flex">
+              {/* 左侧导航栏 */}
+              <div className="sidebar">
+                <Sidebar onMenuClick={handleMenuClick} activeMenuId={activeMenuId} />
+              </div>
+
+              {/* 中央主展示区 */}
+              <div className="flex-1 ml-64 mr-80 p-8 main-content">
+                <div className="max-w-7xl mx-auto">
+                  {/* 模块1：首页/工作台 */}
+                  <ModuleCard 
+                    id={1} 
+                    title="首页 / 工作台" 
+                    description="用于总览关键指标、实时产线状态、异常预警和待办事项。" 
+                    features={[
+                      '关键指标概览',
+                      '实时产线状态',
+                      '异常预警看板',
+                      '待办事项提醒'
+                    ]}
+                    color="bg-primary"
+                  >
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {/* KPI卡片 */}
+                      <div className="grid grid-cols-2 gap-4">
+                        {dashboardData.kpi.map((item, index) => (
+                          <div key={index} className="bg-white p-3 rounded-lg border border-gray-200">
+                            <div className="text-sm text-gray-600">{item.name}</div>
+                            <div className="text-xl font-bold mt-1">{item.value}</div>
+                            <div className={`text-xs mt-1 ${item.trend === 'up' ? 'text-success' : 'text-danger'}`}>
+                              {item.change}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+
+                      {/* 检测趋势 */}
+                      <div className="bg-white p-3 rounded-lg border border-gray-200">
+                        <h4 className="text-sm font-semibold mb-2">近期检测趋势</h4>
+                        <ResponsiveContainer width="100%" height={150}>
+                          <LineChart data={dashboardData.trend}>
+                            <CartesianGrid strokeDasharray="3 3" />
+                            <XAxis dataKey="date" />
+                            <YAxis />
+                            <Tooltip />
+                            <Line type="monotone" dataKey="value" stroke="#3b82f6" />
+                          </LineChart>
+                        </ResponsiveContainer>
+                      </div>
+
+                      {/* 问题结构分布 */}
+                      <div className="bg-white p-3 rounded-lg border border-gray-200">
+                        <h4 className="text-sm font-semibold mb-2">问题结构分布</h4>
+                        <ResponsiveContainer width="100%" height={150}>
+                          <PieChart>
+                            <Pie
+                              data={dashboardData.defectDistribution}
+                              cx="50%"
+                              cy="50%"
+                              innerRadius={30}
+                              outerRadius={60}
+                              fill="#8884d8"
+                              paddingAngle={5}
+                              dataKey="value"
+                              label
+                            >
+                              {dashboardData.defectDistribution.map((entry, index) => (
+                                <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                              ))}
+                            </Pie>
+                            <Tooltip />
+                          </PieChart>
+                        </ResponsiveContainer>
+                      </div>
+
+                      {/* 实时状态 */}
+                      <div className="bg-white p-3 rounded-lg border border-gray-200">
+                        <h4 className="text-sm font-semibold mb-2">实时产线状态</h4>
+                        <div className="space-y-2">
+                          {dashboardData.lineStatus.map((line, index) => (
+                            <div key={index} className="flex justify-between items-center">
+                              <span className="text-sm">{line.name}</span>
+                              <span className={`text-sm px-2 py-1 rounded ${line.status === '运行中' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'}`}>
+                                {line.status}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* 待办事项 */}
+                    <div className="mt-4 bg-white p-3 rounded-lg border border-gray-200">
+                      <h4 className="text-sm font-semibold mb-2">待办事项提醒</h4>
+                      <div className="space-y-2">
+                        {dashboardData.todoList.map((item) => (
+                          <div key={item.id} className="flex justify-between items-center">
+                            <span className="text-sm">{item.title}</span>
+                            <div className="flex items-center">
+                              <span className="text-sm mr-2">{item.count} 件</span>
+                              <span className={`text-xs px-2 py-1 rounded ${item.priority === '高' ? 'bg-red-100 text-red-700' : item.priority === '中' ? 'bg-yellow-100 text-yellow-700' : 'bg-gray-100 text-gray-600'}`}>
+                                {item.priority}
+                              </span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </ModuleCard>
+
+                  {/* 模块2：检测管理 */}
+                  <ModuleCard 
+                    id={2} 
+                    title="检测管理" 
+                    description="负责单次检测和检测记录查询，是系统核心业务模块之一。" 
+                    features={[
+                      '实时检测监控',
+                      '检测记录查询',
+                      '单件检测详情',
+                      '批量检测回溯'
+                    ]}
+                    color="bg-success"
+                  >
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {/* 手机多角度图片 */}
+                      <div className="bg-white p-3 rounded-lg border border-gray-200">
+                        <h4 className="text-sm font-semibold mb-2">手机多角度检测</h4>
+                        <div className="grid grid-cols-4 gap-2">
+                          {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
+                            <div key={i} className="bg-gray-100 rounded-lg h-16 flex items-center justify-center">
+                              <span>📱</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* 检测记录查询 */}
+                      <div className="bg-white p-3 rounded-lg border border-gray-200">
+                        <h4 className="text-sm font-semibold mb-2">检测记录查询</h4>
+                        <div className="overflow-x-auto">
+                          <table className="table">
+                            <thead>
+                              <tr>
+                                <th>序号</th>
+                                <th>序列号</th>
+                                <th>型号</th>
+                                <th>状态</th>
+                                <th>时间</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {inspectionData.recentInspections.map((item) => (
+                                <tr key={item.id}>
+                                  <td>{item.id}</td>
+                                  <td className="text-sm">{item.serial}</td>
+                                  <td className="text-sm">{item.model}</td>
+                                  <td>
+                                    <span className={`text-xs px-2 py-1 rounded ${item.status === '通过' ? 'bg-green-100 text-green-700' : item.status === 'NG' ? 'bg-red-100 text-red-700' : 'bg-yellow-100 text-yellow-700'}`}>
+                                      {item.status}
+                                    </span>
+                                  </td>
+                                  <td className="text-sm">{item.time}</td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+
+                      {/* 缺陷类型分布 */}
+                      <div className="bg-white p-3 rounded-lg border border-gray-200">
+                        <h4 className="text-sm font-semibold mb-2">缺陷类型分布</h4>
+                        <ResponsiveContainer width="100%" height={150}>
+                          <BarChart data={inspectionData.defectTypes}>
+                            <CartesianGrid strokeDasharray="3 3" />
+                            <XAxis dataKey="name" />
+                            <YAxis />
+                            <Tooltip />
+                            <Bar dataKey="count" fill="#3b82f6" />
+                          </BarChart>
+                        </ResponsiveContainer>
+                      </div>
+
+                      {/* 单件检测详情 */}
+                      <div className="bg-white p-3 rounded-lg border border-gray-200">
+                        <h4 className="text-sm font-semibold mb-2">单件检测详情</h4>
+                        <div className="space-y-2 text-sm">
+                          <div className="flex justify-between">
+                            <span>序列号：</span>
+                            <span>SN20240501002</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span>型号：</span>
+                            <span>iPhone 15 Pro</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span>缺陷类型：</span>
+                            <span>划痕</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span>缺陷位置：</span>
+                            <span>屏幕左上角</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span>AI初判：</span>
+                            <span className="text-red-500">NG</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span>规则命中：</span>
+                            <span>划痕检测规则 v1.2</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </ModuleCard>
+
+                  {/* 模块3：复判与处置 */}
+                  <ModuleCard 
+                    id={3} 
+                    title="复判与处置" 
+                    description="处理自动 NG、边界 Case、风险放行候选等问题件。" 
+                    features={[
+                      '复判任务列表',
+                      '复判工作台',
+                      '处置决策',
+                      '复判记录追溯'
+                    ]}
+                    color="bg-warning"
+                  >
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      {/* 左侧任务列表 */}
+                      <div className="bg-white p-3 rounded-lg border border-gray-200">
+                        <h4 className="text-sm font-semibold mb-2">复判任务列表</h4>
+                        <div className="space-y-2">
+                          {reviewData.tasks.map((task) => (
+                            <div key={task.id} className="p-2 border border-gray-100 rounded-lg hover:bg-gray-50">
+                              <div className="text-sm font-medium">{task.serial}</div>
+                              <div className="text-xs text-gray-600">{task.model}</div>
+                              <div className="text-xs mt-1">
+                                <span className="mr-2">缺陷：{task.defect}</span>
+                                <span className={`px-1 py-0.5 rounded ${task.priority === '高' ? 'bg-red-100 text-red-700' : task.priority === '中' ? 'bg-yellow-100 text-yellow-700' : 'bg-gray-100 text-gray-600'}`}>
+                                  {task.priority}
+                                </span>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* 中间工件大图 */}
+                      <div className="bg-white p-3 rounded-lg border border-gray-200">
+                        <h4 className="text-sm font-semibold mb-2">工件图像</h4>
+                        <div className="bg-gray-100 rounded-lg h-40 flex items-center justify-center mb-2">
+                          <span className="text-4xl">📱</span>
+                        </div>
+                        <div className="grid grid-cols-3 gap-2">
+                          {[1, 2, 3].map((i) => (
+                            <div key={i} className="bg-gray-100 rounded-lg h-12 flex items-center justify-center">
+                              <span>🔍</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* 右侧判定依据 */}
+                      <div className="bg-white p-3 rounded-lg border border-gray-200">
+                        <h4 className="text-sm font-semibold mb-2">判定依据</h4>
+                        <div className="space-y-2 text-sm">
+                          <div>
+                            <span className="font-medium">客户标准：</span>
+                            <span>苹果标准包 v1.0</span>
+                          </div>
+                          <div>
+                            <span className="font-medium">相似案例：</span>
+                            <span>3个类似案例</span>
+                          </div>
+                          <div>
+                            <span className="font-medium">AI理由：</span>
+                            <span>划痕长度超过阈值</span>
+                          </div>
+                          <div>
+                            <span className="font-medium">风险建议：</span>
+                            <span className="text-yellow-600">建议NG</span>
+                          </div>
+                        </div>
+
+                        {/* 处置按钮 */}
+                        <div className="mt-4 space-y-2">
+                          <h4 className="text-sm font-semibold mb-2">处置决策</h4>
+                          <div className="grid grid-cols-2 gap-2">
+                            {reviewData.decisionOptions.map((option, index) => (
+                              <button key={index} className="btn btn-outline text-xs">
+                                {option}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </ModuleCard>
+
+                  {/* 模块4：质量监控 */}
+                  <ModuleCard 
+                    id={4} 
+                    title="质量监控" 
+                    description="从质量管理视角查看良率、缺陷结构、趋势和批量风险。" 
+                    features={[
+                      '良率与趋势分析',
+                      '缺陷分布分析',
+                      '异常趋势监控',
+                      '批量风险监控'
+                    ]}
+                    color="bg-info"
+                  >
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {/* 良率趋势 */}
+                      <div className="bg-white p-3 rounded-lg border border-gray-200">
+                        <h4 className="text-sm font-semibold mb-2">良率趋势分析</h4>
+                        <ResponsiveContainer width="100%" height={150}>
+                          <LineChart data={qualityData.yieldTrend}>
+                            <CartesianGrid strokeDasharray="3 3" />
+                            <XAxis dataKey="date" />
+                            <YAxis domain={[95, 100]} />
+                            <Tooltip />
+                            <Line type="monotone" dataKey="value" stroke="#10b981" />
+                          </LineChart>
+                        </ResponsiveContainer>
+                      </div>
+
+                      {/* 缺陷趋势 */}
+                      <div className="bg-white p-3 rounded-lg border border-gray-200">
+                        <h4 className="text-sm font-semibold mb-2">缺陷趋势分析</h4>
+                        <ResponsiveContainer width="100%" height={150}>
+                          <BarChart data={qualityData.defectTrend}>
+                            <CartesianGrid strokeDasharray="3 3" />
+                            <XAxis dataKey="date" />
+                            <YAxis />
+                            <Tooltip />
+                            <Bar dataKey="value" fill="#ef4444" />
+                          </BarChart>
+                        </ResponsiveContainer>
+                      </div>
+
+                      {/* 异常告警 */}
+                      <div className="bg-white p-3 rounded-lg border border-gray-200">
+                        <h4 className="text-sm font-semibold mb-2">异常告警</h4>
+                        <div className="space-y-2">
+                          {qualityData.riskAlerts.map((alert) => (
+                            <div key={alert.id} className="p-2 border border-gray-100 rounded-lg">
+                              <div className="flex justify-between items-center">
+                                <span className="text-sm font-medium">{alert.type}</span>
+                                <span className={`text-xs px-2 py-1 rounded ${alert.level === '高' ? 'bg-red-100 text-red-700' : alert.level === '中' ? 'bg-yellow-100 text-yellow-700' : 'bg-gray-100 text-gray-600'}`}>
+                                  {alert.level}
+                                </span>
+                              </div>
+                              <div className="text-xs text-gray-600 mt-1">{alert.description}</div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* 批量风险 */}
+                      <div className="bg-white p-3 rounded-lg border border-gray-200">
+                        <h4 className="text-sm font-semibold mb-2">批量风险监控</h4>
+                        <div className="space-y-2 text-sm">
+                          <div className="flex justify-between items-center p-2 border border-gray-100 rounded-lg">
+                            <span>线体A - 批次20240501</span>
+                            <span className="text-red-500">高风险</span>
+                          </div>
+                          <div className="flex justify-between items-center p-2 border border-gray-100 rounded-lg">
+                            <span>线体B - 批次20240502</span>
+                            <span className="text-yellow-600">中风险</span>
+                          </div>
+                          <div className="flex justify-between items-center p-2 border border-gray-100 rounded-lg">
+                            <span>线体C - 批次20240503</span>
+                            <span className="text-green-500">低风险</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </ModuleCard>
+
+                  {/* 模块5：规则与标准 */}
+                  <ModuleCard 
+                    id={5} 
+                    title="规则与标准" 
+                    description="管理客户标准包、缺陷规则、接管策略和版本。" 
+                    features={[
+                      '客户标准管理',
+                      '缺陷规则管理',
+                      '接管策略管理',
+                      '版本与发布管理'
+                    ]}
+                    color="bg-primary"
+                  >
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {/* 客户标准管理 */}
+                      <div className="bg-white p-3 rounded-lg border border-gray-200">
+                        <h4 className="text-sm font-semibold mb-2">客户标准管理</h4>
+                        <div className="overflow-x-auto">
+                          <table className="table">
+                            <thead>
+                              <tr>
+                                <th>名称</th>
+                                <th>客户</th>
+                                <th>版本</th>
+                                <th>状态</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {ruleData.standards.map((standard) => (
+                                <tr key={standard.id}>
+                                  <td className="text-sm">{standard.name}</td>
+                                  <td className="text-sm">{standard.client}</td>
+                                  <td className="text-sm">{standard.version}</td>
+                                  <td>
+                                    <span className={`text-xs px-2 py-1 rounded ${standard.status === '生效中' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}`}>
+                                      {standard.status}
+                                    </span>
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+
+                      {/* 缺陷规则管理 */}
+                      <div className="bg-white p-3 rounded-lg border border-gray-200">
+                        <h4 className="text-sm font-semibold mb-2">缺陷规则管理</h4>
+                        <div className="overflow-x-auto">
+                          <table className="table">
+                            <thead>
+                              <tr>
+                                <th>规则名称</th>
+                                <th>严重程度</th>
+                                <th>状态</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {ruleData.rules.map((rule) => (
+                                <tr key={rule.id}>
+                                  <td className="text-sm">{rule.name}</td>
+                                  <td className="text-sm">{rule.severity}</td>
+                                  <td>
+                                    <span className={`text-xs px-2 py-1 rounded ${rule.status === '启用' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'}`}>
+                                      {rule.status}
+                                    </span>
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+
+                      {/* 接管策略管理 */}
+                      <div className="bg-white p-3 rounded-lg border border-gray-200">
+                        <h4 className="text-sm font-semibold mb-2">接管策略管理</h4>
+                        <div className="space-y-2 text-sm">
+                          <div className="p-2 border border-gray-100 rounded-lg">
+                            <div className="font-medium">AI置信度 &lt; 70% → 人工复判</div>
+                            <div className="text-xs text-gray-600 mt-1">适用于所有缺陷类型</div>
+                          </div>
+                          <div className="p-2 border border-gray-100 rounded-lg">
+                            <div className="font-medium">批量异常 → 暂停生产</div>
+                            <div className="text-xs text-gray-600 mt-1">连续5个相同缺陷</div>
+                          </div>
+                          <div className="p-2 border border-gray-100 rounded-lg">
+                            <div className="font-medium">新机型 → 严格模式</div>
+                            <div className="text-xs text-gray-600 mt-1">前1000件全部人工审核</div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* 版本与发布管理 */}
+                      <div className="bg-white p-3 rounded-lg border border-gray-200">
+                        <h4 className="text-sm font-semibold mb-2">版本与发布管理</h4>
+                        <div className="space-y-2 text-sm">
+                          <div className="flex justify-between items-center p-2 border border-gray-100 rounded-lg">
+                            <span>规则包 v2.1</span>
+                            <span className="text-green-600">已发布</span>
+                          </div>
+                          <div className="flex justify-between items-center p-2 border border-gray-100 rounded-lg">
+                            <span>规则包 v2.0</span>
+                            <span className="text-green-600">已发布</span>
+                          </div>
+                          <div className="flex justify-between items-center p-2 border border-gray-100 rounded-lg">
+                            <span>规则包 v1.9</span>
+                            <span className="text-gray-600">已归档</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </ModuleCard>
+
+                  {/* 模块6：系统管理 */}
+                  <ModuleCard 
+                    id={6} 
+                    title="系统管理" 
+                    description="管理用户、角色、权限、系统配置和审计。" 
+                    features={[
+                      '用户管理',
+                      '角色与权限管理',
+                      '系统配置管理',
+                      '日志与审计'
+                    ]}
+                    color="bg-dark"
+                  >
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {/* 用户管理 */}
+                      <div className="bg-white p-3 rounded-lg border border-gray-200">
+                        <h4 className="text-sm font-semibold mb-2">用户管理</h4>
+                        <div className="overflow-x-auto">
+                          <table className="table">
+                            <thead>
+                              <tr>
+                                <th>用户名</th>
+                                <th>角色</th>
+                                <th>状态</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {systemData.users.map((user) => (
+                                <tr key={user.id}>
+                                  <td className="text-sm">{user.name}</td>
+                                  <td className="text-sm">{user.role}</td>
+                                  <td>
+                                    <span className={`text-xs px-2 py-1 rounded ${user.status === '活跃' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'}`}>
+                                      {user.status}
+                                    </span>
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+
+                      {/* 角色与权限管理 */}
+                      <div className="bg-white p-3 rounded-lg border border-gray-200">
+                        <h4 className="text-sm font-semibold mb-2">角色与权限管理</h4>
+                        <div className="space-y-2 text-sm">
+                          {systemData.roles.map((role) => (
+                            <div key={role.id} className="p-2 border border-gray-100 rounded-lg">
+                              <div className="font-medium">{role.name}</div>
+                              <div className="text-xs text-gray-600 mt-1">权限值：{role.permissions}</div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* 系统配置管理 */}
+                      <div className="bg-white p-3 rounded-lg border border-gray-200">
+                        <h4 className="text-sm font-semibold mb-2">系统配置管理</h4>
+                        <div className="space-y-2 text-sm">
+                          <div className="flex justify-between items-center">
+                            <span>检测超时阈值</span>
+                            <span>30秒</span>
+                          </div>
+                          <div className="flex justify-between items-center">
+                            <span>批量异常阈值</span>
+                            <span>5个</span>
+                          </div>
+                          <div className="flex justify-between items-center">
+                            <span>AI置信度阈值</span>
+                            <span>70%</span>
+                          </div>
+                          <div className="flex justify-between items-center">
+                            <span>数据保留期限</span>
+                            <span>90天</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* 日志与审计 */}
+                      <div className="bg-white p-3 rounded-lg border border-gray-200">
+                        <h4 className="text-sm font-semibold mb-2">日志与审计</h4>
+                        <div className="space-y-2 text-xs">
+                          <div className="p-1 border border-gray-100 rounded-lg">
+                            <div>管理员 - 登录系统</div>
+                            <div className="text-gray-600">2024-05-01 14:00:00</div>
+                          </div>
+                          <div className="p-1 border border-gray-100 rounded-lg">
+                            <div>质检员A - 更新检测规则</div>
+                            <div className="text-gray-600">2024-05-01 13:30:00</div>
+                          </div>
+                          <div className="p-1 border border-gray-100 rounded-lg">
+                            <div>工程师B - 批量导入数据</div>
+                            <div className="text-gray-600">2024-05-01 12:15:00</div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </ModuleCard>
+
+                  {/* 模块7：数据与报表 */}
+                  <ModuleCard 
+                    id={7} 
+                    title="数据与报表" 
+                    description="支持导出、看板配置和自定义报表。" 
+                    features={[
+                      '自定义报表',
+                      '数据导出',
+                      '数据看板配置'
+                    ]}
+                    color="bg-secondary"
+                  >
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {/* 自定义报表 */}
+                      <div className="bg-white p-3 rounded-lg border border-gray-200">
+                        <h4 className="text-sm font-semibold mb-2">自定义报表</h4>
+                        <div className="space-y-2">
+                          {reportData.reportTypes.map((report) => (
+                            <div key={report.id} className="flex justify-between items-center p-2 border border-gray-100 rounded-lg">
+                              <span className="text-sm">{report.name}</span>
+                              <span className="text-xs px-2 py-1 bg-gray-100 rounded">{report.format}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* 数据导出 */}
+                      <div className="bg-white p-3 rounded-lg border border-gray-200">
+                        <h4 className="text-sm font-semibold mb-2">数据导出</h4>
+                        <div className="flex flex-wrap gap-2">
+                          <button className="btn btn-outline text-xs">导出 Excel</button>
+                          <button className="btn btn-outline text-xs">导出 CSV</button>
+                          <button className="btn btn-outline text-xs">导出 PDF</button>
+                          <button className="btn btn-outline text-xs">导出 JSON</button>
+                        </div>
+                        <div className="mt-4">
+                          <h5 className="text-xs font-semibold mb-2">导出范围</h5>
+                          <div className="space-y-1 text-xs">
+                            <div className="flex items-center">
+                              <input type="checkbox" className="mr-2" />
+                              <span>最近7天</span>
+                            </div>
+                            <div className="flex items-center">
+                              <input type="checkbox" className="mr-2" />
+                              <span>最近30天</span>
+                            </div>
+                            <div className="flex items-center">
+                              <input type="checkbox" className="mr-2" />
+                              <span>自定义时间范围</span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* 数据看板配置 */}
+                      <div className="bg-white p-3 rounded-lg border border-gray-200 col-span-1 md:col-span-2">
+                        <h4 className="text-sm font-semibold mb-2">数据看板配置</h4>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                          {reportData.dashboards.map((dashboard) => (
+                            <div key={dashboard.id} className="border border-gray-200 rounded-lg p-3 hover:shadow-md transition-shadow">
+                              <h5 className="font-medium text-sm">{dashboard.name}</h5>
+                              <p className="text-xs text-gray-600 mt-1">{dashboard.widgets} 个组件</p>
+                              <div className="mt-2 bg-gray-50 rounded h-20 flex items-center justify-center">
+                                <span>📊</span>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  </ModuleCard>
+
+                  {/* 模块8：我的工作 */}
+                  <ModuleCard 
+                    id={8} 
+                    title="我的工作" 
+                    description="承接个人任务、审批、待办和收藏。" 
+                    features={[
+                      '我的待办',
+                      '我的复判',
+                      '我的审批',
+                      '我的收藏'
+                    ]}
+                    color="bg-success"
+                  >
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {/* 我的待办 */}
+                      <div className="bg-white p-3 rounded-lg border border-gray-200">
+                        <h4 className="text-sm font-semibold mb-2">我的待办</h4>
+                        <div className="space-y-2">
+                          {myWorkData.todos.map((todo) => (
+                            <div key={todo.id} className="p-2 border border-gray-100 rounded-lg">
+                              <div className="text-sm font-medium">{todo.title}</div>
+                              <div className="flex justify-between items-center mt-1">
+                                <span className="text-xs text-gray-600">截止：{todo.deadline}</span>
+                                <span className={`text-xs px-2 py-1 rounded ${todo.status === '待处理' ? 'bg-blue-100 text-blue-700' : 'bg-yellow-100 text-yellow-700'}`}>
+                                  {todo.status}
+                                </span>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* 我的复判 */}
+                      <div className="bg-white p-3 rounded-lg border border-gray-200">
+                        <h4 className="text-sm font-semibold mb-2">我的复判</h4>
+                        <div className="overflow-x-auto">
+                          <table className="table">
+                            <thead>
+                              <tr>
+                                <th>序列号</th>
+                                <th>结果</th>
+                                <th>时间</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {myWorkData.reviews.map((review) => (
+                                <tr key={review.id}>
+                                  <td className="text-sm">{review.serial}</td>
+                                  <td>
+                                    <span className={`text-xs px-2 py-1 rounded ${review.result === '通过' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                                      {review.result}
+                                    </span>
+                                  </td>
+                                  <td className="text-sm">{review.time}</td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+
+                      {/* 我的审批 */}
+                      <div className="bg-white p-3 rounded-lg border border-gray-200">
+                        <h4 className="text-sm font-semibold mb-2">我的审批</h4>
+                        <div className="space-y-2 text-sm">
+                          <div className="p-2 border border-gray-100 rounded-lg">
+                            <div className="font-medium">批量风险审批</div>
+                            <div className="text-xs text-gray-600 mt-1">线体A - 批次20240501</div>
+                            <div className="text-xs text-gray-600 mt-1">状态：待审批</div>
+                          </div>
+                          <div className="p-2 border border-gray-100 rounded-lg">
+                            <div className="font-medium">规则更新审批</div>
+                            <div className="text-xs text-gray-600 mt-1">划痕检测规则 v1.3</div>
+                            <div className="text-xs text-gray-600 mt-1">状态：已审批</div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* 我的收藏 */}
+                      <div className="bg-white p-3 rounded-lg border border-gray-200">
+                        <h4 className="text-sm font-semibold mb-2">我的收藏</h4>
+                        <div className="space-y-2">
+                          <div className="flex items-center p-2 border border-gray-100 rounded-lg hover:bg-gray-50">
+                            <span className="mr-3">📏</span>
+                            <span className="text-sm">划痕检测规则 v1.2</span>
+                          </div>
+                          <div className="flex items-center p-2 border border-gray-100 rounded-lg hover:bg-gray-50">
+                            <span className="mr-3">📊</span>
+                            <span className="text-sm">生产概览看板</span>
+                          </div>
+                          <div className="flex items-center p-2 border border-gray-100 rounded-lg hover:bg-gray-50">
+                            <span className="mr-3">⚙️</span>
+                            <span className="text-sm">系统配置页面</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </ModuleCard>
+                </div>
+              </div>
+
+              {/* 右侧设计规范区 */}
+              <div className="right-panel">
+                <RightGuidePanel />
+              </div>
+            </div>
+          </div>
+        );
+      }
+
+      // 渲染应用
+      ReactDOM.createRoot(document.getElementById('root')).render(
+        <React.StrictMode>
+          <App />
+        </React.StrictMode>
+      );
+    </script>
+  </body>
+</html>
